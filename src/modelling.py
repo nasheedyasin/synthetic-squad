@@ -140,7 +140,7 @@ class SequenceClassification(pl.LightningModule):
                 "scheduler": torch.optim.lr_scheduler.ReduceLROnPlateau(
                     optimizer,
                     patience=4),
-                "monitor": "val_soft_loss"
+                "monitor": "val_loss"
             },
         }
 
