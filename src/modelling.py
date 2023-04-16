@@ -102,7 +102,7 @@ class SequenceClassification(pl.LightningModule):
         # logs metrics for each training_step,
         # and the average across the epoch
         for k, v in loss_dict.items():
-            if isinstance(v, dict): continue
+            if isinstance(v, dict) or isinstance(v, torch.Tensor): continue
             self.log("train_" + k, v.item(), prog_bar=True)
 
         return loss_dict
@@ -115,6 +115,8 @@ class SequenceClassification(pl.LightningModule):
             if isinstance(v, dict):
                 for subk, subv in v.items():
                     self.log(f"val_{k}_{subk}", subv.item(), prog_bar=True)
+            elif isinstance(v, torch.Tensor):
+                self.log("val_" + k, v, prog_bar=True)
             else:
                 self.log("val_" + k, v.item(), prog_bar=True)
 
@@ -128,6 +130,8 @@ class SequenceClassification(pl.LightningModule):
             if isinstance(v, dict):
                 for subk, subv in v.items():
                     self.log(f"test_{k}_{subk}", subv.item(), prog_bar=True)
+            elif isinstance(v, torch.Tensor):
+                self.log("val_" + k, v, prog_bar=True)
             else:
                 self.log("test_" + k, v.item(), prog_bar=True)
 
