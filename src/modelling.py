@@ -73,7 +73,7 @@ class SequenceClassification(pl.LightningModule):
         granular_metric = MulticlassF1Score(num_classes=self.num_labels, average=None).to(self.device)
         overall_metric = MulticlassF1Score(num_classes=self.num_labels, average='micro').to(self.device)
         macro_metric = MulticlassF1Score(num_classes=self.num_labels).to(self.device)
-        reshaped_targets = targets.unsqueeze(1)
+        reshaped_targets = targets.unsqueeze(1).to(self.device)
         pred_labels = output.logits.argmax(dim=1).unsqueeze(1)
 
         return {
@@ -87,11 +87,14 @@ class SequenceClassification(pl.LightningModule):
                 reshaped_targets
             ),
             'granular_f1_score': {
-                self.id2label[idx]: f1 for idx, f1 in granular_metric(
+                self.id2label[idx]: f1 for idx, f1 in enumerate(granular_metric(
                     pred_labels,
                     reshaped_targets
-                )
-            }
+                ))
+            } if self.id2label is not None else granular_metric(
+                pred_labels,
+                reshaped_targets
+            )
         }
 
     def training_step(self, batch, batch_idx, *args, **kwargs):
