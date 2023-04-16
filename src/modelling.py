@@ -1,10 +1,11 @@
 import torch
 import pytorch_lightning as pl
 
-from transformers import AutoModelForSequenceClassification
+from typing import Dict, Optional
 from torch.nn import functional as F
 from sentence_transformers.models import Pooling
 from torchmetrics.classification import MulticlassF1Score
+from transformers import AutoModelForSequenceClassification
 
 
 class SequenceClassification(pl.LightningModule):
@@ -14,7 +15,8 @@ class SequenceClassification(pl.LightningModule):
         num_labels: int, 
         backbone_lr: float = 2e-5,
         task_head_lr: float = 2e-4,
-        weight_decay: float = 1e-4
+        weight_decay: float = 1e-4,
+        id2label: Optional[Dict[int, str]] = None
     ):
         """
         Args:
@@ -32,6 +34,9 @@ class SequenceClassification(pl.LightningModule):
         self.task_head_lr = task_head_lr
         self.weight_decay = weight_decay
         self.num_labels = num_labels
+
+        # For metric reporting purposes
+        self.id2label = id2label
 
         # Base model        
         self.seq_classifier = AutoModelForSequenceClassification.from_pretrained(
@@ -65,16 +70,28 @@ class SequenceClassification(pl.LightningModule):
         output = self(text_tokens, targets)
 
         # Compute the metrics
-        metric = MulticlassF1Score(num_classes=self.num_labels).to(self.device)
+        granular_metric = MulticlassF1Score(num_classes=self.num_labels, average=None).to(self.device)
+        overall_metric = MulticlassF1Score(num_classes=self.num_labels, average='micro').to(self.device)
+        macro_metric = MulticlassF1Score(num_classes=self.num_labels).to(self.device)
         reshaped_targets = targets.unsqueeze(1)
         pred_labels = output.logits.argmax(dim=1).unsqueeze(1)
 
         return {
             'loss': output.loss,
-            'f1_score': metric(
+            'overall_f1_score': overall_metric(
                 pred_labels,
                 reshaped_targets
-            )
+            ),
+            'macro_f1_score': macro_metric(
+                pred_labels,
+                reshaped_targets
+            ),
+            'granular_f1_score': {
+                self.id2label[idx]: f1 for idx, f1 in granular_metric(
+                    pred_labels,
+                    reshaped_targets
+                )
+            }
         }
 
     def training_step(self, batch, batch_idx, *args, **kwargs):
