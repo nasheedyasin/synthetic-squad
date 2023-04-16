@@ -101,7 +101,8 @@ class SequenceClassification(pl.LightningModule):
         loss_dict = self.common_step(batch, batch_idx)
         # logs metrics for each training_step,
         # and the average across the epoch
-        for k,v in loss_dict.items():
+        for k, v in loss_dict.items():
+            if isinstance(v, dict): continue
             self.log("train_" + k, v.item(), prog_bar=True)
 
         return loss_dict
@@ -110,8 +111,12 @@ class SequenceClassification(pl.LightningModule):
         loss_dict = self.common_step(batch, batch_idx)
         # logs metrics for each training_step,
         # and the average across the epoch
-        for k,v in loss_dict.items():
-            self.log("val_" + k, v.item(), prog_bar=True)
+        for k, v in loss_dict.items():
+            if isinstance(v, dict):
+                for subk, subv in v.items():
+                    self.log(f"val_{k}_{subk}", subv.item(), prog_bar=True)
+            else:
+                self.log("val_" + k, v.item(), prog_bar=True)
 
         return loss_dict
 
@@ -119,9 +124,12 @@ class SequenceClassification(pl.LightningModule):
         loss_dict = self.common_step(batch, batch_idx)
         # logs metrics for each training_step,
         # and the average across the epoch
-        for k,v in loss_dict.items():
-            self.log("test_" + k, v.item(), prog_bar=True)
-
+        for k, v in loss_dict.items():
+            if isinstance(v, dict):
+                for subk, subv in v.items():
+                    self.log(f"test_{k}_{subk}", subv.item(), prog_bar=True)
+            else:
+                self.log("test_" + k, v.item(), prog_bar=True)
 
     def predict_step(self, batch, batch_idx):
         ids, text_tokens = batch
