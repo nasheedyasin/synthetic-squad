@@ -3,7 +3,6 @@ import pytorch_lightning as pl
 
 from typing import Dict, Optional
 from torch.nn import functional as F
-from sentence_transformers.models import Pooling
 from torchmetrics.classification import MulticlassF1Score
 from transformers import AutoModelForSequenceClassification
 
