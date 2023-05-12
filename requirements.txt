@@ -1,0 +1,14 @@
+transformers
+gymnasium[box2d]
+scipy
+opencv-python
+torchmetrics
+pytorch-lightning
+datasets
+pytorch-metric-learning
+ipykernel
+pandas
+scikit-learn
+matplotlib
+ipywidgets
+setfit
